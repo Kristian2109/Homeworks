@@ -3,7 +3,6 @@ import math
 
 sys.setrecursionlimit(10**7)
 
-# Directions: (name, dx, dy)
 DIRECTIONS = [
     ("left", 0, 1),
     ("right", 0, -1),
@@ -12,60 +11,65 @@ DIRECTIONS = [
 ]
 
 class State():
-    def __init__(self, board):
+    def __init__(self, board, zero_position):
         self.board: list[int] = board
+        self.zero_position: int = zero_position
 
+class IdaStar():
+    def __init__(self, board: list[int], target: dict[int, int], size: int):
+        self.initialState = State(board, board.index(0))
+        self.size = size
+        self.path = []
+        self.target = target
+        self.current_threshold = manhattan_distance(self.initialState, target, size)
 
-def ida_star(initial: State, target: dict[int, int], size: int):
-    current_threshold = manhattan_distance(initial, target, size)
-    path = []
-
-    while True:
-        result = search(initial, initial.board.index(0), target, None, 0, current_threshold, path, size)
-        if result is True:
-            return path
-        
-        if result == float("inf"):
-            return None
-        
-        current_threshold = result
-
-def search(node: State, null_index: int, target: dict[int, int], prev_move: str, current_distance: int, threshold: int, path: list[str], size: int):
-    estimated_distance = current_distance + manhattan_distance(node, target, size)
-
-    if estimated_distance > threshold:
-        return estimated_distance
-    
-    if estimated_distance == current_distance:
-        return True
-    
-    min_cost = float("inf")
-    zero_x, zero_y = divmod(null_index, size)
-
-    for (name, dx, dy) in DIRECTIONS:
-        if prev_move == "left" and name == "right": continue
-        if prev_move == "right" and name == "left": continue
-        if prev_move == "up" and name == "down": continue
-        if prev_move == "down" and name == "up": continue
-
-        new_x = zero_x + dx
-        new_y = zero_y + dy
-        if 0 <= new_x < size and 0 <= new_y < size:
-            new_zero_index = new_x * size + new_y
-            path.append(name)
-            new_board = list(node.board)
-            new_board[null_index], new_board[new_zero_index] = new_board[new_zero_index], new_board[null_index]
-            new_state = State(new_board)
-
-            result = search(new_state, new_zero_index, target, name, current_distance + 1, threshold, path, size)
+    def execute(self):
+        while True:
+            result = self._search(self.initialState, None, 0)
             if result is True:
-                return True
-            if result < min_cost:
-                min_cost = result
+                return self.path
             
-            path.pop()
+            if result == float("inf"):
+                return None
+            
+            self.current_threshold = result
 
-    return min_cost
+    def _search(self, node: State, prev_move_name: str, current_distance: int):
+        estimated_distance = current_distance + manhattan_distance(node, self.target, self.size)
+
+        if estimated_distance > self.current_threshold:
+            return estimated_distance
+        
+        if estimated_distance == current_distance:
+            return True
+        
+        min_cost = float("inf")
+        zero_x, zero_y = divmod(node.zero_position, self.size)
+
+        for (direction_name, dx, dy) in DIRECTIONS:
+            if prev_move_name == "left" and direction_name == "right": continue
+            if prev_move_name == "right" and direction_name == "left": continue
+            if prev_move_name == "up" and direction_name == "down": continue
+            if prev_move_name == "down" and direction_name == "up": continue
+
+            new_x = zero_x + dx
+            new_y = zero_y + dy
+            if 0 <= new_x < self.size and 0 <= new_y < self.size:
+                new_zero_index = new_x * self.size + new_y
+                self.path.append(direction_name)
+                new_board = list(node.board)
+                new_board[node.zero_position], new_board[new_zero_index] = new_board[new_zero_index], new_board[node.zero_position]
+                new_state = State(new_board, new_zero_index)
+
+                result = self._search(new_state, direction_name, current_distance + 1)
+                if result is True:
+                    return True
+                if result < min_cost:
+                    min_cost = result
+                
+                self.path.pop()
+
+        return min_cost
 
 
 def manhattan_distance(current: State, target: dict[int, int], size):
@@ -102,7 +106,6 @@ def is_solvable(board, size, zero_pos_goal):
 def main():
     numbers_count = int(sys.stdin.readline().strip())
     target_null_position = int(sys.stdin.readline().strip())
-
     board_size = int(math.sqrt(numbers_count + 1))
     board: list[int] = []
 
@@ -131,8 +134,7 @@ def main():
         print(-1)
         return
     
-    initialState = State(board)
-    result = ida_star(initialState, positions_by_node, board_size)
+    result = IdaStar(board, positions_by_node, board_size).execute()
     print(len(result))
     for move in result:
         print(move)
