@@ -70,6 +70,27 @@ class IdaStar():
                 self.path.pop()
 
         return min_cost
+    
+    def is_solvable(self):
+        board = [x for x in self.initialState.board if x != 0]
+        inv_count = 0
+        target_zero_position = self.target[0]
+        start_zero_position = self.initialState.board.index(0)
+
+        for i in range(len(board)):
+            for j in range(i + 1, len(board)):
+                if board[i] > board[j]:
+                    inv_count += 1
+
+        if self.size % 2 == 1:
+            return inv_count % 2 == 0
+        else:
+            start_zero_row = self.size - (start_zero_position // self.size)
+            target_zero_row = self.size - (target_zero_position // self.size)
+            if (inv_count + start_zero_row + target_zero_row) % 2 == 0:
+                return True
+            return False
+        
 
 
 def manhattan_distance(current: State, target: dict[int, int], size):
@@ -85,27 +106,10 @@ def manhattan_distance(current: State, target: dict[int, int], size):
     
     return dist
 
-def is_solvable(board, size, zero_pos_goal):
-    arr = [x for x in board if x != 0]
-    inv_count = 0
-    for i in range(len(arr)):
-        for j in range(i + 1, len(arr)):
-            if arr[i] > arr[j]:
-                inv_count += 1
-
-    if size % 2 == 1:
-        return inv_count % 2 == 0
-    else:
-        start_zero_row = size - (board.index(0) // size)
-        goal_zero_row = size - (zero_pos_goal // size)
-        if (inv_count + start_zero_row + goal_zero_row) % 2 == 0:
-            return True
-        return False
-
 
 def main():
     numbers_count = int(sys.stdin.readline().strip())
-    target_null_position = int(sys.stdin.readline().strip())
+    target_zero_position = int(sys.stdin.readline().strip())
     board_size = int(math.sqrt(numbers_count + 1))
     board: list[int] = []
 
@@ -118,23 +122,22 @@ def main():
         target_board.append(i)
     target_board.append(0)
 
-    if target_null_position != -1:
+    if target_zero_position != -1:
         end_position = board_size * board_size
-        for i in reversed(range(target_null_position + 1, end_position)):
+        for i in reversed(range(target_zero_position + 1, end_position)):
             target_board[i], target_board[i-1] = target_board[i-1], target_board[i]
 
     positions_by_node: dict[int, int] = {}
     for i in target_board:
         positions_by_node[target_board[i]] = i
-    # for i in range(board_size * board_size):
-    #     print(target_board[i])
 
+    algorithm = IdaStar(board, positions_by_node, board_size)
 
-    if not is_solvable(board, board_size, target_null_position):
+    if not algorithm.is_solvable():
         print(-1)
         return
     
-    result = IdaStar(board, positions_by_node, board_size).execute()
+    result = algorithm.execute()
     print(len(result))
     for move in result:
         print(move)
