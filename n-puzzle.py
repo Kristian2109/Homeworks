@@ -10,10 +10,12 @@ DIRECTIONS = [
     ("down", -1, 0)
 ]
 
+
 class State():
     def __init__(self, board, zero_position):
         self.board: list[int] = board
         self.zero_position: int = zero_position
+
 
 class IdaStar():
     def __init__(self, board: list[int], target: dict[int, int], size: int):
@@ -25,6 +27,7 @@ class IdaStar():
 
     def execute(self):
         while True:
+            print(f"Current threshold: {self.current_threshold}")
             result = self._search(self.initialState, None, 0)
             if result is True:
                 return self.path
@@ -58,7 +61,8 @@ class IdaStar():
                 new_zero_index = new_x * self.size + new_y
                 self.path.append(direction_name)
                 new_board = list(node.board)
-                new_board[node.zero_position], new_board[new_zero_index] = new_board[new_zero_index], new_board[node.zero_position]
+                new_board[node.zero_position], new_board[new_zero_index] = \
+                    new_board[new_zero_index], new_board[node.zero_position]
                 new_state = State(new_board, new_zero_index)
 
                 result = self._search(new_state, direction_name, current_distance + 1)
@@ -91,7 +95,6 @@ class IdaStar():
                 return True
             return False
         
-
 
 def manhattan_distance(current: State, target: dict[int, int], size):
     dist = 0
