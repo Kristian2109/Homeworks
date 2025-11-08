@@ -4,8 +4,11 @@ import numpy
 from random import uniform
 
 POPULATION_SIZE = 10
-PLANE_DIMENSION = 100
+PLANE_DIMENSION = 500
 MAX_ITERATIONS = 1000
+ELITISM_SELECTION = 10
+MUTATION_BY_INSERTION = 0.9
+MUTATION_BY_SWAP = 0.8
 
 
 class Point:
@@ -43,28 +46,28 @@ class TSP:
             random.shuffle(chromosome)
             population.append(chromosome.copy())
 
-        population_scores: list[float] = []
+        scores: list[float] = []
         for (index, chromosome) in enumerate(population):
-            population_scores.append(self.evaluate_path_score(chromosome))
+            scores.append(self.evaluate_path_score(chromosome))
 
         best_path_lens_per_iteration: list[float] = []
         while len(best_path_lens_per_iteration) < MAX_ITERATIONS:
             new_population: list[list[int]] = []
-            first_part = POPULATION_SIZE // 10
+            first_part = POPULATION_SIZE // ELITISM_SELECTION
 
-            best_paths = self.elitism_selection(population, population_scores, first_part)
+            best_paths = self.elitism_selection(population, scores, first_part)
             new_population.extend(best_paths)
 
-            roulette_wheel_selection = self.roulette_wheel_with_crossover(population, population_scores,
-                                                                          POPULATION_SIZE - first_part)
-            new_population.extend(roulette_wheel_selection)
+            second_selection = self.roulette_wheel_with_crossover(population, scores, POPULATION_SIZE - first_part)
+            new_population.extend(second_selection)
 
-            population_scores = [self.evaluate_path_score(path) for path in new_population]
+            self.mutate_by_insertion(new_population[first_part:])
+            self.mutate(new_population[first_part:])
+
+            scores = [self.evaluate_path_score(path) for path in new_population]
             population = new_population
 
-            self.mutate(population[first_part:])
-
-            best_path_len = 100 / max(population_scores)
+            best_path_len = 100 / max(scores)
             best_path_lens_per_iteration.append(best_path_len)
 
         p = max(len(best_path_lens_per_iteration) // 20, 1)
@@ -72,7 +75,7 @@ class TSP:
             if index % p == 0:
                 print(f"{index}    -   {path}")
 
-        best_path_index = numpy.argmax(population_scores)
+        best_path_index = numpy.argmax(scores)
         return population[best_path_index], best_path_lens_per_iteration[len(best_path_lens_per_iteration) - 1]
 
     def evaluate_path_score(self, path: list[int]):
@@ -97,31 +100,54 @@ class TSP:
             parent_indexes = random.choices(range(POPULATION_SIZE), weights=population_scores, k=2)
             first_parent = population[parent_indexes[0]]
             second_parent = population[parent_indexes[1]]
-            res.append(partially_mapped_crossover(first_parent, second_parent))
+            res.append(cls.order_crossover(first_parent, second_parent))
+
         return res
 
     def mutate(self, population: list[list[int]]):
         for i in range(len(population)):
-            if random.uniform(0, 1) > 0.8:
+            if random.uniform(0, 1) > MUTATION_BY_SWAP:
                 [first, second] = random.choices(range(self.points_count), k=2)
                 population[i][first], population[i][second] = population[i][second], population[i][first]
 
+    def mutate_by_insertion(self, population: list[list[int]]):
+        for i in range(len(population)):
+            if random.uniform(0, 1) > MUTATION_BY_INSERTION:
+                [first, second] = random.choices(range(self.points_count), k=2)
+                current = population[i][first]
+                population[i].pop(first)
+                population[i].insert(second, current)
 
-def partially_mapped_crossover(parent1, parent2) -> list[int]:
-    size = len(parent1)
-    p1, p2 = sorted(random.sample(range(size), 2))
-    child = [-1] * size
-    child[p1:p2 + 1] = parent2[p1:p2 + 1]
-    mapping = {parent2[i]: parent1[i] for i in range(p1, p2 + 1)}
+    @classmethod
+    def partially_mapped_crossover(cls, parent1: list[int], parent2: list[int]) -> list[int]:
+        size = len(parent1)
+        p1, p2 = sorted(random.sample(range(size), 2))
+        child = [-1] * size
+        child[p1:p2 + 1] = parent2[p1:p2 + 1]
+        mapping = {parent2[i]: parent1[i] for i in range(p1, p2 + 1)}
 
-    for i in range(size):
-        if i < p1 or i > p2:
-            candidate = parent1[i]
-            while candidate in child:
-                candidate = mapping.get(candidate, candidate)
-            child[i] = candidate
+        for i in range(size):
+            if i < p1 or i > p2:
+                candidate = parent1[i]
+                while candidate in child:
+                    candidate = mapping.get(candidate, candidate)
+                child[i] = candidate
 
-    return child
+        return child
+
+    @classmethod
+    def order_crossover(cls, parent1: list[int], parent2: list[int]) -> list[int]:
+        size = len(parent1)
+        p1, p2 = sorted(random.sample(range(size), 2))
+        child = [-1] * size
+        child[p1:p2 + 1] = parent1[p1:p2 + 1]
+        pos = (p2 + 1) % size
+        for gene in parent2:
+            if gene not in child:
+                child[pos] = gene
+                pos = (pos + 1) % size
+
+        return child
 
 
 def generate_random_points(points_count: int) -> list[Point]:
