@@ -5,7 +5,7 @@ from random import uniform
 
 POPULATION_SIZE = 10
 PLANE_DIMENSION = 100
-MAX_ITERATIONS = 10000
+MAX_ITERATIONS = 1000
 
 
 class Point:
@@ -36,7 +36,7 @@ class TSP:
 
         return distance_matrix
 
-    def find_best_path(self):
+    def find_best_path(self) -> (list[int], float):
         population: list[list[int]] = []
         chromosome = [i for i in range(self.points_count)]
         for i in range(POPULATION_SIZE):
@@ -72,6 +72,9 @@ class TSP:
             if index % p == 0:
                 print(f"{index}    -   {path}")
 
+        best_path_index = numpy.argmax(population_scores)
+        return population[best_path_index], best_path_lens_per_iteration[len(best_path_lens_per_iteration) - 1]
+
     def evaluate_path_score(self, path: list[int]):
         score = 0
         for i in range(self.points_count - 1):
@@ -99,7 +102,7 @@ class TSP:
 
     def mutate(self, population: list[list[int]]):
         for i in range(len(population)):
-            if random.uniform(0, 1) > 0.9:
+            if random.uniform(0, 1) > 0.8:
                 [first, second] = random.choices(range(self.points_count), k=2)
                 population[i][first], population[i][second] = population[i][second], population[i][first]
 
@@ -147,7 +150,17 @@ def main():
     # print(list(map(lambda el: {"x": el.x, "y": el.y}, points)))
 
     alg = TSP(points)
-    alg.find_best_path()
+    (best_path, best_path_len) = alg.find_best_path()
+
+    start_in_best = best_path.index(0)
+    result = []
+    for i in range(start_in_best, n):
+        result.append(points[best_path[i]].name)
+    for i in range(start_in_best):
+        result.append(points[best_path[i]].name)
+
+    print(" -> ".join(result))
+    print(best_path_len)
 
 
 if __name__ == '__main__':
