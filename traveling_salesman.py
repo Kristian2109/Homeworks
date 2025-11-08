@@ -8,13 +8,15 @@ from random import uniform
 # Number of individuals in each generation
 POPULATION_SIZE = 10
 PLANE_DIMENSION = 100
+MAX_ITERATIONS = 10
 
 
 class Point:
-    def __init__(self, index, x, y):
+    def __init__(self, index, x, y, name=""):
         self.index: int = index
         self.x: int = x
         self.y: int = y
+        self.name: str = name
 
 
 class TSP:
@@ -49,19 +51,36 @@ def evaluate_fitness_score(n: int, distance_matrix: list[list[float]], chromosom
     return 100 / score
 
 
+def generate_random_points(points_count: int) -> list[Point]:
+    return [Point(i, x=uniform(0, PLANE_DIMENSION), y=uniform(0, PLANE_DIMENSION)) for i in range(points_count)]
+
+
+def get_points_from_console(n: int):
+    points = []
+    for i in range(n):
+        point_info = input().split(" ")
+        new_point = Point(i, float(point_info[1]), float(point_info[2]), point_info[0])
+        points.append(new_point)
+    return points
+
+
 def main():
-    N = int(input())
-    points: list[Point] = []
-    for i in range(N):
-        points.append(Point(i, uniform(0, PLANE_DIMENSION), uniform(0, PLANE_DIMENSION)))
+    n = input()
+    points: list[Point]
+    if n.isdigit():
+        n = int(n)
+        points = generate_random_points(n)
+    else:
+        n = int(input())
+        points = get_points_from_console(n)
 
     # print(list(map(lambda el: {"x": el.x, "y": el.y}, points)))
 
     distance_matrix: list[list[float]] = []
-    for i in range(N):
+    for i in range(n):
         current_point = points[i]
         distance_matrix.append([])
-        for j in range(N):
+        for j in range(n):
             target_point = points[j]
             current_distance = math.sqrt((current_point.x - target_point.x) ** 2 +
                                          (current_point.y - target_point.y) ** 2)
@@ -69,17 +88,17 @@ def main():
         # print(distance_matrix[i])
 
     population: list[list[int]] = []
-    chromosome = [i for i in range(N)]
+    chromosome = [i for i in range(n)]
     for i in range(POPULATION_SIZE):
         random.shuffle(chromosome)
         population.append(chromosome.copy())
 
     population_scores: list[float] = []
     for (index, chromosome) in enumerate(population):
-        population_scores.append(evaluate_fitness_score(N, distance_matrix, chromosome))
+        population_scores.append(evaluate_fitness_score(n, distance_matrix, chromosome))
 
-    iteration = 0
-    while iteration < 1000:
+    best_path_lens_per_iteration: list[float] = []
+    while len(best_path_lens_per_iteration) < MAX_ITERATIONS:
         new_population: list[list[int]] = []
         order = numpy.array(sorted([*enumerate(population_scores)], key=lambda x: x[1], reverse=True), dtype=int)[:, 0]
         sorted_population = [population[i] for i in order]
@@ -93,14 +112,17 @@ def main():
 
         for i in range(POPULATION_SIZE):
             if random.uniform(0, 1) > 0.9:
-                [first, second] = random.choices(range(N), k=2)
+                [first, second] = random.choices(range(n), k=2)
                 new_population[i][first], new_population[i][second] = new_population[i][second], new_population[i][first]
 
-        population_scores = [evaluate_fitness_score(N, distance_matrix, path) for path in new_population]
+        population_scores = [evaluate_fitness_score(n, distance_matrix, path) for path in new_population]
         population = new_population
 
-        print(f"Current best: {100 / max(population_scores)}")
-        iteration += 1
+        best_path_len = 100 / max(population_scores)
+        best_path_lens_per_iteration.append(best_path_len)
+
+    for path in best_path_lens_per_iteration:
+        print(path)
 
 
 if __name__ == '__main__':
