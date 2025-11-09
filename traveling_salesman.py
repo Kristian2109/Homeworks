@@ -1,14 +1,16 @@
 import math
 import random
 import numpy
+import os
+import time
 from random import uniform
 
 POPULATION_SIZE = 10
 PLANE_DIMENSION = 500
-MAX_ITERATIONS = 1000
+MAX_ITERATIONS = 3000
 ELITISM_SELECTION = 10
 MUTATION_BY_INSERTION = 0.9
-MUTATION_BY_SWAP = 0.8
+MUTATION_BY_SWAP = 0.9
 
 
 class Point:
@@ -33,10 +35,11 @@ class TSP:
             distance_matrix.append([])
             for j in range(points_count):
                 target_point = self.points[j]
-                current_distance = math.sqrt((current_point.x - target_point.x) ** 2 +
-                                             (current_point.y - target_point.y) ** 2)
+                current_distance = math.sqrt(
+                    (current_point.x - target_point.x) ** 2 +
+                    (current_point.y - target_point.y) ** 2
+                )
                 distance_matrix[i].append(current_distance)
-
         return distance_matrix
 
     def find_best_path(self) -> (list[int], float):
@@ -51,32 +54,62 @@ class TSP:
             scores.append(self.evaluate_path_score(chromosome))
 
         best_path_lens_per_iteration: list[float] = []
-        while len(best_path_lens_per_iteration) < MAX_ITERATIONS:
+        random_factor = 1
+        iterations_count = 0
+        completed_paths: list[list[int]] = []
+        completed_paths_scores: list[float] = []
+        while iterations_count < MAX_ITERATIONS:
             new_population: list[list[int]] = []
             first_part = POPULATION_SIZE // ELITISM_SELECTION
 
             best_paths = self.elitism_selection(population, scores, first_part)
             new_population.extend(best_paths)
 
-            second_selection = self.roulette_wheel_with_crossover(population, scores, POPULATION_SIZE - first_part)
+            second_selection = self.roulette_wheel_with_crossover(population, scores, POPULATION_SIZE - first_part,
+                                                                  random_factor)
             new_population.extend(second_selection)
 
             self.mutate_by_insertion(new_population[first_part:])
-            self.mutate(new_population[first_part:])
+            self.mutate_by_swap(new_population[first_part:])
 
             scores = [self.evaluate_path_score(path) for path in new_population]
             population = new_population
 
-            best_path_len = 100 / max(scores)
+            best_path_len = 1 / max(scores)
             best_path_lens_per_iteration.append(best_path_len)
+
+            if iterations_count > 1000 and \
+                    best_path_lens_per_iteration[iterations_count - 1] == \
+                    best_path_lens_per_iteration[iterations_count - 1000]:
+                best_path_index = numpy.argmax(scores)
+                completed_paths.append(population[best_path_index])
+                population = []
+                completed_paths_scores.append(max(scores))
+                for i in range(POPULATION_SIZE):
+                    random.shuffle(chromosome)
+                    population.append(chromosome.copy())
+                scores = [self.evaluate_path_score(path) for path in population]
+
+            if iterations_count > 200 and \
+                    best_path_lens_per_iteration[iterations_count - 1] <= \
+                    best_path_lens_per_iteration[iterations_count - 200]:
+                random_factor = 0.5
+            else:
+                random_factor = 1
+
+            iterations_count += 1
 
         p = max(len(best_path_lens_per_iteration) // 20, 1)
         for (index, path) in enumerate(best_path_lens_per_iteration):
             if index % p == 0:
                 print(f"{index}    -   {path}")
 
+        if len(completed_paths) != 0:
+            best_path_index = numpy.argmax(completed_paths_scores)
+            return completed_paths[best_path_index], min(best_path_lens_per_iteration)
+
         best_path_index = numpy.argmax(scores)
-        return population[best_path_index], best_path_lens_per_iteration[len(best_path_lens_per_iteration) - 1]
+        return population[best_path_index], min(best_path_lens_per_iteration)
 
     def evaluate_path_score(self, path: list[int]):
         score = 0
@@ -84,8 +117,7 @@ class TSP:
             begin = path[i]
             end = path[i + 1]
             score += self.distance_matrix[begin][end]
-
-        return 100 / score
+        return 1 / score
 
     @classmethod
     def elitism_selection(cls, population: list[list[int]], population_scores: list[float], selections_count: int):
@@ -94,17 +126,20 @@ class TSP:
         return [sorted_population[i] for i in range(selections_count)]
 
     @classmethod
-    def roulette_wheel_with_crossover(cls, population: list[list[int]], population_scores: list[float], selections_count: int):
+    def roulette_wheel_with_crossover(cls, population: list[list[int]], population_scores: list[float], selections_count: int, random_factor):
         res = []
         for i in range(selections_count):
             parent_indexes = random.choices(range(POPULATION_SIZE), weights=population_scores, k=2)
             first_parent = population[parent_indexes[0]]
             second_parent = population[parent_indexes[1]]
+            if uniform(0, 1) > random_factor:
+                chromosome = [i for i in range(len(first_parent))]
+                random.shuffle(chromosome)
+                second_parent = chromosome
             res.append(cls.order_crossover(first_parent, second_parent))
-
         return res
 
-    def mutate(self, population: list[list[int]]):
+    def mutate_by_swap(self, population: list[list[int]]):
         for i in range(len(population)):
             if random.uniform(0, 1) > MUTATION_BY_SWAP:
                 [first, second] = random.choices(range(self.points_count), k=2)
@@ -132,7 +167,6 @@ class TSP:
                 while candidate in child:
                     candidate = mapping.get(candidate, candidate)
                 child[i] = candidate
-
         return child
 
     @classmethod
@@ -146,7 +180,6 @@ class TSP:
             if gene not in child:
                 child[pos] = gene
                 pos = (pos + 1) % size
-
         return child
 
 
@@ -157,36 +190,49 @@ def generate_random_points(points_count: int) -> list[Point]:
 def get_points_from_console(n: int):
     points = []
     for i in range(n):
-        point_info = input().split(" ")
+        point_info = input().split()
         new_point = Point(i, float(point_info[1]), float(point_info[2]), point_info[0])
         points.append(new_point)
     return points
 
 
 def main():
-    n = input()
+    # Check environment variable
+    time_only = os.getenv("FMI_TIME_ONLY", "0") == "1"
+    are_cities = False
+    bench_mode = "--bench" in os.sys.argv
+
+    start_time = time.perf_counter()
+
+    n = input().strip()
     points: list[Point]
     if n.isdigit():
         n = int(n)
         points = generate_random_points(n)
     else:
+        are_cities = True
         n = int(input())
         points = get_points_from_console(n)
 
-    # print(list(map(lambda el: {"x": el.x, "y": el.y}, points)))
-
     alg = TSP(points)
-    (best_path, best_path_len) = alg.find_best_path()
+    best_path, best_path_len = alg.find_best_path()
 
-    start_in_best = best_path.index(0)
-    result = []
-    for i in range(start_in_best, n):
-        result.append(points[best_path[i]].name)
-    for i in range(start_in_best):
-        result.append(points[best_path[i]].name)
+    elapsed_ms = (time.perf_counter() - start_time) * 1000
 
-    print(" -> ".join(result))
-    print(best_path_len)
+    if bench_mode or time_only:
+        print(f"# TIMES_MS: alg={elapsed_ms:.2f}")
+
+    if not time_only:
+        start_in_best = best_path.index(0)
+        result = []
+        for i in range(start_in_best, n):
+            result.append(points[best_path[i]].name)
+        for i in range(start_in_best):
+            result.append(points[best_path[i]].name)
+
+        if are_cities:
+            print(" -> ".join(result))
+        print(best_path_len)
 
 
 if __name__ == '__main__':
