@@ -7,10 +7,10 @@ from random import uniform
 
 POPULATION_SIZE = 10
 PLANE_DIMENSION = 500
-MAX_ITERATIONS = 3000
+MAX_ITERATIONS = 10000
 ELITISM_SELECTION = 10
 MUTATION_BY_INSERTION = 0.9
-MUTATION_BY_SWAP = 0.9
+MUTATION_BY_SWAP = 0.8
 
 
 class Point:
@@ -54,7 +54,6 @@ class TSP:
             scores.append(self.evaluate_path_score(chromosome))
 
         best_path_lens_per_iteration: list[float] = []
-        random_factor = 1
         iterations_count = 0
         completed_paths: list[list[int]] = []
         completed_paths_scores: list[float] = []
@@ -65,8 +64,7 @@ class TSP:
             best_paths = self.elitism_selection(population, scores, first_part)
             new_population.extend(best_paths)
 
-            second_selection = self.roulette_wheel_with_crossover(population, scores, POPULATION_SIZE - first_part,
-                                                                  random_factor)
+            second_selection = self.roulette_wheel_with_crossover(population, scores, POPULATION_SIZE - first_part)
             new_population.extend(second_selection)
 
             self.mutate_by_insertion(new_population[first_part:])
@@ -89,13 +87,6 @@ class TSP:
                     random.shuffle(chromosome)
                     population.append(chromosome.copy())
                 scores = [self.evaluate_path_score(path) for path in population]
-
-            if iterations_count > 200 and \
-                    best_path_lens_per_iteration[iterations_count - 1] <= \
-                    best_path_lens_per_iteration[iterations_count - 200]:
-                random_factor = 0.5
-            else:
-                random_factor = 1
 
             iterations_count += 1
 
@@ -126,16 +117,12 @@ class TSP:
         return [sorted_population[i] for i in range(selections_count)]
 
     @classmethod
-    def roulette_wheel_with_crossover(cls, population: list[list[int]], population_scores: list[float], selections_count: int, random_factor):
+    def roulette_wheel_with_crossover(cls, population: list[list[int]], population_scores: list[float], selections_count: int):
         res = []
         for i in range(selections_count):
             parent_indexes = random.choices(range(POPULATION_SIZE), weights=population_scores, k=2)
             first_parent = population[parent_indexes[0]]
             second_parent = population[parent_indexes[1]]
-            if uniform(0, 1) > random_factor:
-                chromosome = [i for i in range(len(first_parent))]
-                random.shuffle(chromosome)
-                second_parent = chromosome
             res.append(cls.order_crossover(first_parent, second_parent))
         return res
 
@@ -196,12 +183,34 @@ def get_points_from_console(n: int):
     return points
 
 
-def main():
-    # Check environment variable
+def solution(points, are_cities: bool):
     time_only = os.getenv("FMI_TIME_ONLY", "0") == "1"
-    are_cities = False
     bench_mode = "--bench" in os.sys.argv
+    start_time = time.perf_counter()
+    alg = TSP(points)
+    best_path, best_path_len = alg.find_best_path()
 
+    elapsed_ms = (time.perf_counter() - start_time) * 1000
+
+    if bench_mode or time_only:
+        print(f"# TIMES_MS: alg={elapsed_ms:.2f}")
+
+    if not time_only:
+        start_in_best = best_path.index(0)
+        result = []
+        for i in range(start_in_best, len(points)):
+            result.append(points[best_path[i]].name)
+        for i in range(start_in_best):
+            result.append(points[best_path[i]].name)
+
+        if are_cities:
+            print(" -> ".join(result))
+        print(best_path_len)
+        return best_path_len
+
+
+def main():
+    are_cities = False
     start_time = time.perf_counter()
 
     n = input().strip()
@@ -214,25 +223,15 @@ def main():
         n = int(input())
         points = get_points_from_console(n)
 
-    alg = TSP(points)
-    best_path, best_path_len = alg.find_best_path()
+    solution(points, are_cities)
 
-    elapsed_ms = (time.perf_counter() - start_time) * 1000
-
-    if bench_mode or time_only:
-        print(f"# TIMES_MS: alg={elapsed_ms:.2f}")
-
-    if not time_only:
-        start_in_best = best_path.index(0)
-        result = []
-        for i in range(start_in_best, n):
-            result.append(points[best_path[i]].name)
-        for i in range(start_in_best):
-            result.append(points[best_path[i]].name)
-
-        if are_cities:
-            print(" -> ".join(result))
-        print(best_path_len)
+    # results = []
+    # for i in range(10):
+    #     results.append(solution(points, are_cities))
+    #
+    # elapsed_ms = (time.perf_counter() - start_time) * 1000
+    # print(f"# TIMES_MS: alg={elapsed_ms:.2f}")
+    # print(results)
 
 
 if __name__ == '__main__':
