@@ -39,9 +39,9 @@ class IdaStar:
         if estimated_distance == current_distance:
             return True
 
-        min_cost = float("inf")
         zero_x, zero_y = divmod(node.zero_position, self.size)
 
+        costs = []
         for (direction_name, dx, dy) in self.DIRECTIONS:
             if prev_move_name == "left" and direction_name == "right": continue
             if prev_move_name == "right" and direction_name == "left": continue
@@ -62,12 +62,12 @@ class IdaStar:
                 result = self._search(new_state, direction_name, current_distance + 1)
                 if result is True:
                     return True
-                if result < min_cost:
-                    min_cost = result
+                else:
+                    costs.append(result)
 
                 self.path.pop()
 
-        return min_cost
+        return min(costs)
 
     def is_solvable(self):
         board = [x for x in self.initialState.board if x != 0]
