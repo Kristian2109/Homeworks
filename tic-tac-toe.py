@@ -1,29 +1,21 @@
-from typing import TypedDict
-
-
-class Score(TypedDict):
-    winner: int
-    depth: int
-
-
 def min_max(board: list[list[int]], should_maximize: bool = True, depth: int = 0):
-    winner = check_winner(board)
+    winner = check_winner(board, depth)
     if winner != 0:
         return {
-            "score": Score(winner=winner, depth=depth),
+            "score": winner,
             "row": -1,
             "col": -1
         }
 
     if is_end(board):
         return {
-            "score": Score(winner=0, depth=depth),
+            "score": winner,
             "row": -1,
             "col": -1
         }
 
     best_direction = [-1, -1]
-    best_direction_score = Score(winner=-2 if should_maximize else 2, depth=depth)
+    best_direction_score = -20 if should_maximize else 20
 
     for row in range(3):
         for col in range(3):
@@ -42,29 +34,27 @@ def min_max(board: list[list[int]], should_maximize: bool = True, depth: int = 0
     }
 
 
-def is_first_better(first: Score, second: Score, should_maximize):
+def is_first_better(first: int, second: int, should_maximize):
     if should_maximize:
-        return first["winner"] > second["winner"] or \
-               first["winner"] == second["winner"] and first["depth"] < second["depth"]
+        return first > second
     else:
-        return first["winner"] < second["winner"] or \
-               first["winner"] == second["winner"] and first["depth"] > second["depth"]
+        return first < second
 
 
-def check_winner(board: list[list[int]]):
+def check_winner(board: list[list[int]], depth):
     for row in range(3):
         if board[row][0] != 0 and all(col == board[row][0] for col in board[row]):
-            return board[row][0]
+            return board[row][0] * 10 - depth * board[row][0]
 
     for col in range(3):
         if board[0][col] != 0 and all(board[row][col] == board[0][col] for row in range(3)):
-            return board[0][col]
+            return board[0][col] * 10 - depth * board[0][col]
 
     if board[0][0] != 0 and all(board[diag][diag] == board[0][0] for diag in range(0, 3)):
-        return board[0][0]
+        return board[0][0] * 10 - depth * board[0][0]
 
     if board[2][2] != 0 and all(board[diag][2 - diag] == board[0][2] for diag in range(0, 3)):
-        return board[0][2]
+        return board[0][2] * 10 - - depth * board[0][2]
 
     return 0
 
@@ -78,11 +68,10 @@ def solve_game(board: list[list[int]]):
 
 
 def read_board_framed():
-    # Reads exactly 7 lines of framed board and returns a 3x3 matrix of ints
     board = []
-    input()  # +---+---+---+
+    input()
     for _ in range(3):
-        line = input().strip()  # e.g. "| X | O | _ |"
+        line = input().strip()
         parts = line.split("|")
         row = []
         for cell in parts[1:4]:
@@ -94,7 +83,7 @@ def read_board_framed():
             else:
                 row.append(0)
         board.append(row)
-        input()  # +---+---+---+
+        input()
     return board
 
 
