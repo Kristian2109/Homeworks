@@ -47,6 +47,11 @@ class MinMaxAlgorithm:
                         best_direction = [row, col]
                         best_direction_score = result["score"]
 
+                    alpha = max(result["score"], alpha) if should_maximize else alpha
+                    beta = beta if should_maximize else min(result["score"], beta)
+                    if beta <= alpha:
+                        break
+
         return {
             "row": best_direction[0],
             "col": best_direction[1],
