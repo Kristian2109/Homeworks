@@ -31,7 +31,7 @@ def min_max(board: list[list[int]], should_maximize: bool = True, is_x: bool = T
     return {
         "row": best_direction[0],
         "col": best_direction[1],
-        "score": Score(winner=0, depth=depth)
+        "score": best_direction_score
     }
 
 
@@ -69,8 +69,8 @@ def solve_game(board: list[list[int]]):
 def main():
     board: list[list[int]] = [
         [1, 1, -1],
-        [-1, -1, 0],
-        [0, 0, 0]
+        [-1, -1, 1],
+        [1, 0, 0]
     ]
     result = min_max(board, is_x=False)
     print(result)
