@@ -18,7 +18,7 @@ class Point:
         self.name: str = name
 
 
-class TravellingSalesman:
+class TravelingSalesman:
     def __init__(self, points: list[Point]):
         self.points: list[Point] = points
         self.points_count = len(points)
@@ -73,8 +73,8 @@ class TravellingSalesman:
 
             iterations_count += 1
 
-        p = max(len(best_path_lens_per_iteration) // 11, 1)
-        for (index, path) in enumerate(best_path_lens_per_iteration):
+        p = max(len(best_path_lens_per_iteration) // 20, 1)
+        for (index, path) in enumerate(sorted(best_path_lens_per_iteration, reverse=True)):
             if index % p == 0:
                 print(path)
 

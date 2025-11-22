@@ -2,7 +2,7 @@
 # import time
 from typing import List
 from random import uniform
-from tsp_ga import TravellingSalesman, PLANE_DIMENSION, Point
+from tsp_ga import TravelingSalesman, PLANE_DIMENSION, Point
 
 
 def generate_random_points(points_count: int) -> List[Point]:
@@ -22,7 +22,7 @@ def solution(points, are_cities: bool):
     # time_only = os.getenv("FMI_TIME_ONLY", "0") == "1"
     # bench_mode = "--bench" in os.sys.argv
     # start_time = time.perf_counter()
-    alg = TravellingSalesman(points)
+    alg = TravelingSalesman(points)
     best_path, best_path_len = alg.find_best_path()
 
     # elapsed_ms = (time.perf_counter() - start_time) * 1000
