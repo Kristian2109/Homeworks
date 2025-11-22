@@ -1,6 +1,6 @@
 import sys
 import math
-from idaStart import IdaStar
+from IdaStart import IdaStar
 
 sys.setrecursionlimit(10**7)
 
