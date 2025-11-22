@@ -15,8 +15,15 @@ def min_max(board: list[list[int]], should_maximize: bool = True, depth: int = 0
             "col": -1
         }
 
+    if is_end(board):
+        return {
+            "score": Score(winner=0, depth=depth),
+            "row": -1,
+            "col": -1
+        }
+
     best_direction = [-1, -1]
-    best_direction_score = Score(winner=-2 if should_maximize else 2, depth=0)
+    best_direction_score = Score(winner=-2 if should_maximize else 2, depth=depth)
 
     for row in range(3):
         for col in range(3):
@@ -50,16 +57,20 @@ def check_winner(board: list[list[int]]):
             return board[row][0]
 
     for col in range(3):
-        if board[0][col] != 0 and all(row == board[0][col] for row in board[col]):
+        if board[0][col] != 0 and all(board[row][col] == board[0][col] for row in range(3)):
             return board[0][col]
 
-    if all(board[diag][diag] == board[0][0] for diag in range(0, 3)):
+    if board[0][0] != 0 and all(board[diag][diag] == board[0][0] for diag in range(0, 3)):
         return board[0][0]
 
-    if all(board[diag][2 - diag] == board[0][2] for diag in range(0, 3)):
+    if board[2][2] != 0 and all(board[diag][2 - diag] == board[0][2] for diag in range(0, 3)):
         return board[0][2]
 
     return 0
+
+
+def is_end(board: list[list[int]]):
+    return all(all(col != 0 for col in row) for row in board)
 
 
 def solve_game(board: list[list[int]]):
@@ -68,9 +79,9 @@ def solve_game(board: list[list[int]]):
 
 def main():
     board: list[list[int]] = [
-        [1, 0, 0],
-        [0, -1, 0],
-        [0, 0, -1],
+        [1, 1, -1],
+        [-1, -1, 1],
+        [1, -1, 1]
     ]
     result = min_max(board)
     print(result)
