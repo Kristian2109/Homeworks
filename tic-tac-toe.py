@@ -7,9 +7,6 @@ class Score(TypedDict):
 
 
 def min_max(board: list[list[int]], should_maximize: bool = True, is_x: bool = True, depth: int = 0):
-    best_direction = [-1, -1]
-    best_direction_score = Score(winner=-10_000 if should_maximize else 10_000, depth=depth)
-
     winner = check_winner(board)
     if winner != 0:
         return {
@@ -18,13 +15,19 @@ def min_max(board: list[list[int]], should_maximize: bool = True, is_x: bool = T
             "col": -1
         }
 
+    best_direction = [-1, -1]
+    best_direction_score = Score(winner=winner, depth=depth)
+
+    if depth == 0:
+        best_direction_score = Score(winner=-2 if should_maximize else 2, depth=0)
+
     for row in range(3):
         for col in range(3):
             if board[row][col] == 0:
                 board[row][col] = 1 if is_x else -1
                 result = min_max(board, should_maximize=not should_maximize, is_x=not is_x, depth=depth + 1)
                 board[row][col] = 0
-                if is_first_better(result["score"], best_direction_score, should_maximize):
+                if is_first_better(result["score"], best_direction_score, should_maximize, is_x):
                     best_direction = [row, col]
                     best_direction_score = result["score"]
 
@@ -35,13 +38,13 @@ def min_max(board: list[list[int]], should_maximize: bool = True, is_x: bool = T
     }
 
 
-def is_first_better(first: Score, second: Score, should_maximize):
+def is_first_better(first: Score, second: Score, should_maximize, is_x):
     if should_maximize:
         return first["winner"] > second["winner"] or \
                first["winner"] == second["winner"] and first["depth"] < second["depth"]
     else:
         return first["winner"] < second["winner"] or \
-            first["winner"] == second["winner"] and first["depth"] > second["depth"]
+               first["winner"] == second["winner"] and first["depth"] > second["depth"]
 
 
 def check_winner(board: list[list[int]]):
@@ -70,9 +73,9 @@ def main():
     board: list[list[int]] = [
         [1, 1, -1],
         [-1, -1, 1],
-        [1, 0, 0]
+        [1, -1, 1]
     ]
-    result = min_max(board, is_x=False)
+    result = min_max(board)
     print(result)
 
 
