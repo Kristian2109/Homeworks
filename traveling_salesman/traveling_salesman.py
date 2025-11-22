@@ -27,21 +27,6 @@ class TSP:
         self.points_count = len(points)
         self.distance_matrix: list[list[float]] = self.get_distance_matrix()
 
-    def get_distance_matrix(self):
-        distance_matrix = []
-        points_count = len(self.points)
-        for i in range(points_count):
-            current_point = self.points[i]
-            distance_matrix.append([])
-            for j in range(points_count):
-                target_point = self.points[j]
-                current_distance = math.sqrt(
-                    (current_point.x - target_point.x) ** 2 +
-                    (current_point.y - target_point.y) ** 2
-                )
-                distance_matrix[i].append(current_distance)
-        return distance_matrix
-
     def find_best_path(self) -> (list[int], float):
         population: list[list[int]] = []
         chromosome = [i for i in range(self.points_count)]
@@ -57,6 +42,7 @@ class TSP:
         iterations_count = 0
         completed_paths: list[list[int]] = []
         completed_paths_scores: list[float] = []
+
         while iterations_count < MAX_ITERATIONS:
             new_population: list[list[int]] = []
             first_part = POPULATION_SIZE // ELITISM_SELECTION
@@ -168,6 +154,21 @@ class TSP:
                 child[pos] = gene
                 pos = (pos + 1) % size
         return child
+
+    def get_distance_matrix(self):
+        distance_matrix = []
+        points_count = len(self.points)
+        for i in range(points_count):
+            current_point = self.points[i]
+            distance_matrix.append([])
+            for j in range(points_count):
+                target_point = self.points[j]
+                current_distance = math.sqrt(
+                    (current_point.x - target_point.x) ** 2 +
+                    (current_point.y - target_point.y) ** 2
+                )
+                distance_matrix[i].append(current_distance)
+        return distance_matrix
 
 
 def generate_random_points(points_count: int) -> list[Point]:
