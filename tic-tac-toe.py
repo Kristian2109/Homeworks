@@ -18,7 +18,7 @@ class MinMaxAlgorithm:
     def get_best_move(self):
         return self.min_max(should_maximize=self.is_x_bot)
 
-    def min_max(self, should_maximize: bool, depth: int = 0) -> MixMaxResult:
+    def min_max(self, should_maximize: bool, depth: int = 0, alpha: int = -100, beta: int = 100) -> MixMaxResult:
         winner = self.check_winner(depth)
         if winner != 0:
             return {
@@ -41,7 +41,7 @@ class MinMaxAlgorithm:
             for col in range(3):
                 if self.board[row][col] == 0:
                     self.board[row][col] = 1 if should_maximize else -1
-                    result = self.min_max(should_maximize=not should_maximize, depth=depth + 1)
+                    result = self.min_max(should_maximize=not should_maximize, depth=depth + 1, alpha=alpha, beta=beta)
                     self.board[row][col] = 0
                     if self.is_first_better(result["score"], best_direction_score, should_maximize):
                         best_direction = [row, col]
@@ -122,11 +122,63 @@ def judge_mode():
     print_move_from_minimax_result(result)
 
 
+def print_board(board: list[list[int]]):
+    def sym(v):
+        if v == 1:
+            return "X"
+        elif v == -1:
+            return "O"
+        else:
+            return "_"
+
+    print("+---+---+---+")
+    for r in range(3):
+        print(f"| {sym(board[r][0])} | {sym(board[r][1])} | {sym(board[r][2])} |")
+        print("+---+---+---+")
+
+
+def read_non_empty():
+    line = input().strip()
+    while line == "":
+        line = input().strip()
+    return line
+
+
+def game_mode():
+    input_for_first = read_non_empty()
+    input_for_x = read_non_empty()
+    is_x_first = input_for_first.split()[1].lower() == "x"
+    is_x_human = input_for_x.split()[1].lower() == "x"
+
+    board = read_board_framed()
+
+    algorithm = MinMaxAlgorithm(board, is_x_bot=not is_x_human)
+
+    is_human_turn = (is_x_human and is_x_first) or (not is_x_human and not is_x_first)
+    human_number = 1 if is_x_human else -1
+
+    while not algorithm.is_end():
+        print_board(board)
+        if is_human_turn:
+            human_input = read_non_empty()
+            row, col = map(int, human_input.split())
+            if 1 <= row <= 3 and 1 <= col <= 3 and board[row - 1][col - 1] == 0:
+                board[row - 1][col - 1] = human_number
+        else:
+            result = algorithm.get_best_move()
+            r = result["row"]
+            c = result["col"]
+            board[r][c] = -1 if human_number == 1 else 1
+
+        is_human_turn = not is_human_turn
+
+
 def main():
     mode = input().strip()
-    if mode == "JUDGE":
+    if mode.upper() == "JUDGE":
         judge_mode()
     else:
+        game_mode()
         pass
 
 
