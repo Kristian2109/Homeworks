@@ -1,4 +1,4 @@
-from minmax import MinMaxAlgorithm
+from minMax import MinMaxAlgorithm
 
 
 def read_board_framed():
