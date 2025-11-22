@@ -1,3 +1,7 @@
 problem,test,status,time_ms,time_budget_ms,tier,correct,complete,optimal,time_alg_ms,time_cal_ms,note
-tsp,t01,RTE,124,30000,slow,false,false,,,0,exit 1 (runs: 0/1 OK)
-tsp,t02,RTE,126,30000,slow,false,false,,,0,exit 1 (runs: 0/10 OK)
+frog-leap,t01,OK,83,1000,slow,true,true,true,,0,(runs: 1/1 OK)
+frog-leap,t02,OK,80,1000,slow,true,true,true,,0,(runs: 1/1 OK)
+frog-leap,t03,OK,80,1000,slow,true,true,true,,0,(runs: 1/1 OK)
+frog-leap,t04,OK,703,1000,slow,true,true,true,,503,(runs: 1/1 OK)
+frog-leap,t05,TLE,4739,1000,slow,false,false,,,4539,over time (+3539ms; eff=1200ms) (runs: 0/1 OK)
+frog-leap,t06,TLE,10226,5000,slow,false,false,,,10026,over time (+5026ms; eff=5200ms) (runs: 0/1 OK)
