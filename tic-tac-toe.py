@@ -77,15 +77,56 @@ def solve_game(board: list[list[int]]):
     min_max(board)
 
 
+def read_board_framed():
+    # Reads exactly 7 lines of framed board and returns a 3x3 matrix of ints
+    board = []
+    input()  # +---+---+---+
+    for _ in range(3):
+        line = input().strip()  # e.g. "| X | O | _ |"
+        parts = line.split("|")
+        row = []
+        for cell in parts[1:4]:
+            symbol = cell.strip()
+            if symbol == "X":
+                row.append(1)
+            elif symbol == "O":
+                row.append(-1)
+            else:
+                row.append(0)
+        board.append(row)
+        input()  # +---+---+---+
+    return board
+
+
+def print_move_from_minimax_result(result):
+    r = result["row"]
+    c = result["col"]
+    if r == -1 and c == -1:
+        print(-1)
+    else:
+        print(r + 1, c + 1)
+
+
+def judge_mode():
+    turn_line = input().strip()
+    _, player = turn_line.split()
+
+    board = read_board_framed()
+
+    should_maximize = (player == "X")
+
+    result = min_max(board, should_maximize=should_maximize, depth=0)
+    print_move_from_minimax_result(result)
+
+
 def main():
-    board: list[list[int]] = [
-        [1, 1, -1],
-        [-1, -1, 1],
-        [1, -1, 1]
-    ]
-    result = min_max(board)
-    print(result)
+    mode = input().strip()
+    if mode == "JUDGE":
+        judge_mode()
+    else:
+        pass
 
 
 if __name__ == "__main__":
     main()
+
