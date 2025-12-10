@@ -86,10 +86,24 @@ def knn(records: list[Sequence], point: Sequence, k: int):
             best = count
 
     return {
-        "best_k": best_k,
         "best_cluster": best_index,
         "actual_cluster": point[-1]
     }
+
+
+def compute_accuracy(results):
+    accuracy = sum(map(lambda res: res["best_cluster"] == res["actual_cluster"], results)) / len(results)
+    return accuracy
+
+
+def predict_results(train, test, k):
+    results = []
+    for r in test:
+        result = knn(train, r, k)
+        results.append(result)
+
+    accuracy = compute_accuracy(results)
+    return accuracy
 
 
 def main():
@@ -107,22 +121,28 @@ def main():
     # print(get_z_normalized(petal_width))
     print(dataset)
 
-    seed(67621)
-    shuffle(dataset)
+    seed(67601)
     records_count = len(dataset)
     train_count = math.ceil(records_count * 0.8)
     test_count = records_count - train_count
+
+    shuffle(dataset)
     train = dataset[:train_count]
     test = dataset[test_count:]
-    #
-    results = []
-    for r in test:
-        result = knn(train, r, 10)
-        results.append(result)
+    for k in range(1, 20):
+        accuracy = predict_results(train, test, k)
+        print(f"{k} - Accuracy {accuracy:.2f}")
 
-    print(results)
-    accuracy = sum(map(lambda res: res["best_cluster"] == res["actual_cluster"], results)) / len(results)
-    print(accuracy)
+    accuracies: list[float] = []
+    for fold_number in range(10):
+        test_dataset = dataset[fold_number * 15:][:15]
+        train_dataset = dataset[:fold_number * 15] + dataset[fold_number * 15 + 15:]
+        accuracy = predict_results(train_dataset, test_dataset, 10)
+        accuracies.append(accuracy)
+        print(f'Accuracy Fold {fold_number}: f{accuracy:.2f}%')
+
+    print(f"Average Accuracy: {mean(accuracies):.2f}%")
+    print(f"Standard Deviation: {stdev(accuracies):.2f}%")
 
 
 if __name__ == "__main__":
