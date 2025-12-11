@@ -52,7 +52,7 @@ def get_z_normalized(feature_values: list[float]):
     return list(map(lambda v: (v - mean_value) / std_dev, feature_values))
 
 
-def min_max_normalized(feature_values: list[float]):
+def get_min_max_normalized(feature_values: list[float]):
     min_value = min(feature_values)
     max_value = max(feature_values)
 
@@ -109,17 +109,15 @@ def train_test_split(dataset: MutableSequence, train_set_size):
     shuffled_dataset = list(dataset)
     shuffle(shuffled_dataset)
 
-    records_count = len(shuffled_dataset)
-
     train = []
     test = []
-    classes_in_train = {0: 0, 1: 0, 2: 0}
     train_set_records_per_class = ceil(RECORDS_COUNT_PER_CLASS * train_set_size)
+    count_by_class_in_train = {0: 0, 1: 0, 2: 0}
 
-    for i in range(records_count):
+    for i in range(len(shuffled_dataset)):
         current_class = shuffled_dataset[i][-1]
-        if classes_in_train.get(current_class) < train_set_records_per_class:
-            classes_in_train[current_class] += 1
+        if count_by_class_in_train.get(current_class) < train_set_records_per_class:
+            count_by_class_in_train[current_class] += 1
             train.append(shuffled_dataset[i])
         else:
             test.append(shuffled_dataset[i])
@@ -142,3 +140,23 @@ def cross_fold_validation(dataset, clusters_count):
     print()
     print(f"Average Accuracy: {mean(accuracies):.2f}%")
     print(f"Standard Deviation: {stdev(accuracies):.2f}%")
+
+
+def apply_normalization(dataset: Sequence[Sequence], transform_fn):
+    features_values = []
+    for i in range(4):
+        features_values.append([])
+        for record in dataset:
+            features_values[i].append(record[i])
+
+    normalized_values = [transform_fn(feature) for feature in features_values]
+    normalized_dataset = []
+
+    for record_index in range(len(dataset)):
+        normalized_dataset.append([])
+        for i in range(4):
+            normalized_dataset[record_index].append(normalized_values[i][record_index])
+
+        normalized_dataset[record_index].append(dataset[record_index][4])
+
+    return normalized_dataset

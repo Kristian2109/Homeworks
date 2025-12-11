@@ -1,6 +1,6 @@
 from statistics import mean, stdev
 from knn import get_iris_dataset, predict_results, train_test_split
-from random import seed
+from random import seed, shuffle
 
 
 TRAIN_SET_SIZE: float = 0.8
@@ -19,6 +19,7 @@ def main():
     print()
 
     accuracies: list[float] = []
+    shuffle(dataset)
     for fold_number in range(10):
         test_dataset = dataset[fold_number * 15:][:15]
         train_dataset = dataset[:fold_number * 15] + dataset[fold_number * 15 + 15:]
