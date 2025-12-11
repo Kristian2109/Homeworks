@@ -1,23 +1,19 @@
-import math
-from statistics import mean, stdev, median
-from knn import get_iris_dataset, predict_results
-from random import shuffle, seed
+from statistics import mean, stdev
+from knn import get_iris_dataset, predict_results, train_test_split
+from random import seed
 
 
-TRAIN_SET_SIZE: int = 0.8
+TRAIN_SET_SIZE: float = 0.8
+
 
 def main():
     clusters_count = int(input())
     dataset = get_iris_dataset()
 
-    seed(671010)
-    records_count = len(dataset)
-    train_count = math.ceil(records_count * TRAIN_SET_SIZE)
+    seed(179)
+    train, test = train_test_split(dataset, TRAIN_SET_SIZE)
 
-    shuffle(dataset)
-    train = dataset[:train_count]
-
-    accuracy = predict_results(train, train, clusters_count)
+    accuracy = predict_results(train, test, clusters_count)
     print("Train set accuracy")
     print(f"{clusters_count} - Accuracy: {accuracy:.2f}")
     print()
@@ -28,7 +24,7 @@ def main():
         train_dataset = dataset[:fold_number * 15] + dataset[fold_number * 15 + 15:]
         accuracy = predict_results(train_dataset, test_dataset, clusters_count)
         accuracies.append(accuracy)
-        print(f'Accuracy Fold {fold_number}: f{accuracy:.2f}%')
+        print(f'Accuracy Fold {fold_number}: {accuracy:.2f}%')
 
     print()
     print(f"Average Accuracy: {mean(accuracies):.2f}%")

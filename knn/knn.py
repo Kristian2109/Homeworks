@@ -1,6 +1,7 @@
 from statistics import mean, stdev, median
-from math import sqrt
-from typing import Sequence
+from math import sqrt, ceil
+from typing import MutableSequence, Sequence
+from random import shuffle
 
 
 FILE_NAME = "C:\\Users\\krist\\Downloads\\iris\\iris.data"
@@ -68,8 +69,6 @@ def euclidean_distance(first: Sequence, second: Sequence):
 
 def knn(records: list[Sequence], point: Sequence, k: int):
     distances = list(map(lambda r: (euclidean_distance(r[:-1], point[:-1]), r[-1]), records))
-    # print(distances)
-
     sorted_distances = sorted(distances, key=lambda distance: distance[0])
     best_k = sorted_distances[:k]
     values_count = [0] * 10
@@ -103,3 +102,33 @@ def predict_results(train, test, k):
 
     accuracy = compute_accuracy(results)
     return accuracy
+
+
+def train_test_split(dataset: MutableSequence, train_set_size):
+    shuffled_dataset = list(dataset)
+    shuffle(shuffled_dataset)
+
+    records_count = len(shuffled_dataset)
+    train_count = ceil(records_count * train_set_size)
+
+    train = shuffled_dataset[:train_count]
+    test = shuffled_dataset[records_count - train_count:]
+
+    return train, test
+
+
+def cross_fold_validation(dataset, clusters_count):
+    shuffled_dataset = list(dataset)
+    shuffle(shuffled_dataset)
+
+    accuracies: list[float] = []
+    for fold_number in range(10):
+        test_dataset = dataset[fold_number * 15:][:15]
+        train_dataset = dataset[:fold_number * 15] + dataset[fold_number * 15 + 15:]
+        accuracy = predict_results(train_dataset, test_dataset, clusters_count)
+        accuracies.append(accuracy)
+        print(f'Accuracy Fold {fold_number}: f{accuracy:.2f}%')
+
+    print()
+    print(f"Average Accuracy: {mean(accuracies):.2f}%")
+    print(f"Standard Deviation: {stdev(accuracies):.2f}%")
