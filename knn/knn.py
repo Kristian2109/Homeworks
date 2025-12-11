@@ -5,6 +5,7 @@ from random import shuffle
 
 
 FILE_NAME = "C:\\Users\\krist\\Downloads\\iris\\iris.data"
+RECORDS_COUNT_PER_CLASS = 50
 
 
 def create_record(raw_record: str):
@@ -109,10 +110,19 @@ def train_test_split(dataset: MutableSequence, train_set_size):
     shuffle(shuffled_dataset)
 
     records_count = len(shuffled_dataset)
-    train_count = ceil(records_count * train_set_size)
 
-    train = shuffled_dataset[:train_count]
-    test = shuffled_dataset[records_count - train_count:]
+    train = []
+    test = []
+    classes_in_train = {0: 0, 1: 0, 2: 0}
+    train_set_records_per_class = ceil(RECORDS_COUNT_PER_CLASS * train_set_size)
+
+    for i in range(records_count):
+        current_class = shuffled_dataset[i][-1]
+        if classes_in_train.get(current_class) < train_set_records_per_class:
+            classes_in_train[current_class] += 1
+            train.append(shuffled_dataset[i])
+        else:
+            test.append(shuffled_dataset[i])
 
     return train, test
 

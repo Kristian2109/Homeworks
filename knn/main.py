@@ -10,7 +10,7 @@ def main():
     clusters_count = int(input())
     dataset = get_iris_dataset()
 
-    seed(179)
+    seed(1799)
     train, test = train_test_split(dataset, TRAIN_SET_SIZE)
 
     accuracy = predict_results(train, test, clusters_count)
