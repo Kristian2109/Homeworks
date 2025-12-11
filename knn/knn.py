@@ -1,9 +1,12 @@
 from statistics import mean, stdev, median
-from math import sqrt, ceil
-from typing import MutableSequence, Sequence
+from math import ceil
+from typing import MutableSequence, Sequence, Tuple
 from random import shuffle
+from itertools import count
+from kdtree import build_tree, Node, search_nearest_neighbors
 
-
+counter = count()
+DIMENSIONALITY = 4
 FILE_NAME = "C:\\Users\\krist\\Downloads\\iris\\iris.data"
 RECORDS_COUNT_PER_CLASS = 50
 
@@ -59,46 +62,16 @@ def get_min_max_normalized(feature_values: list[float]):
     return list(map(lambda v: (v - min_value) / (max_value - min_value), feature_values))
 
 
-def euclidean_distance(first: Sequence, second: Sequence):
-    seq_len = len(first)
-    non_squared_distance: float = 0.
-    for i in range(seq_len):
-        non_squared_distance += (first[i] - second[i]) ** 2
-
-    return sqrt(non_squared_distance)
-
-
-def knn(records: list[Sequence], point: Sequence, k: int):
-    distances = list(map(lambda r: (euclidean_distance(r[:-1], point[:-1]), r[-1]), records))
-    sorted_distances = sorted(distances, key=lambda distance: distance[0])
-    best_k = sorted_distances[:k]
-    values_count = [0] * 10
-
-    for v in best_k:
-        values_count[v[1]] += 1
-
-    best = -10000000
-    best_index = -100000
-    for index, count in enumerate(values_count):
-        if best < count:
-            best_index = index
-            best = count
-
-    return {
-        "best_cluster": best_index,
-        "actual_cluster": point[-1]
-    }
-
-
 def compute_accuracy(results):
     accuracy = sum(map(lambda res: res["best_cluster"] == res["actual_cluster"], results)) / len(results)
     return accuracy
 
 
 def predict_results(train, test, k):
+    tree = build_tree(train)
     results = []
     for r in test:
-        result = knn(train, r, k)
+        result = knn_improved(tree, r, k)
         results.append(result)
 
     accuracy = compute_accuracy(results)
@@ -160,3 +133,27 @@ def apply_normalization(dataset: Sequence[Sequence], transform_fn):
         normalized_dataset[record_index].append(dataset[record_index][4])
 
     return normalized_dataset
+
+
+def knn_improved(tree: Node, point: Sequence, k: int):
+    best_nodes: list[Tuple[float, int, Node]] = []
+    search_nearest_neighbors(tree, point[:-1], best_nodes, 0, k)
+
+    best_k = [(-value[0], value[2].cluster) for value in sorted(best_nodes, key=lambda value: value[0], reverse=True)]
+    values_count = [0] * 10
+
+    for v in best_k:
+        values_count[v[1]] += 1
+
+    best = -10000000
+    best_index = -100000
+    for index, value_count in enumerate(values_count):
+        if best < value_count:
+            best_index = index
+            best = value_count
+
+    return {
+        "best_cluster": best_index,
+        "actual_cluster": point[-1],
+        "best_k": best_k
+    }
