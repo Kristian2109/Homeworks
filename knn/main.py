@@ -1,5 +1,6 @@
 from statistics import mean, stdev
-from knn import get_iris_dataset, predict_results, train_test_split
+from knn import predict_results
+from common import train_test_split, get_iris_dataset
 from random import seed, shuffle
 
 

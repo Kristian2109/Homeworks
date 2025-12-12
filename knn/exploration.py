@@ -1,5 +1,6 @@
-from knn import get_iris_dataset, display_statistics, apply_normalization, predict_results, train_test_split, \
+from common import get_iris_dataset, display_statistics, apply_normalization, train_test_split, \
     get_z_normalized, get_min_max_normalized
+from knn import predict_results
 from random import seed
 
 
