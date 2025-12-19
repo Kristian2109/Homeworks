@@ -21,9 +21,9 @@ def get_results_accuracy(model, test):
     return mean(results)
 
 
-def cross_fold_validation(data: pd.DataFrame, ignore_missing: bool):
+def cross_fold_validation(data: pd.DataFrame, ignore_missing: bool, folds: int):
     skf = StratifiedKFold(
-        n_splits=10,
+        n_splits=folds,
         shuffle=True,
         random_state=42
     )
@@ -37,12 +37,16 @@ def cross_fold_validation(data: pd.DataFrame, ignore_missing: bool):
         model = NaiveBayes(x_train, 'Class Name', ignore_missing)
 
         accuracy = get_results_accuracy(model, x_test)
-        print(f"    Accuracy Fold {len(folds)}: {accuracy:.2f}%")
+        print(f"    Accuracy Fold {len(folds)}: {get_percentage(accuracy)}")
         folds.append(accuracy)
 
     print()
-    print(f"    Average Accuracy: {mean(folds):.2f}%")
-    print(f"    Standard Deviation: {stdev(folds):2f}%")
+    print(f"    Average Accuracy: {get_percentage(mean(folds))}")
+    print(f"    Standard Deviation: {get_percentage(stdev(folds))}")
+
+
+def get_percentage(num: float):
+    return f"{num * 100:.2f}%"
 
 
 headers = """1. Class Name: 2 (democrat, republican)
