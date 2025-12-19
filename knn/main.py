@@ -14,7 +14,7 @@ def main():
     seed(1799)
     train, test = train_test_split(dataset, TRAIN_SET_SIZE)
 
-    accuracy = predict_results(train, test, clusters_count)
+    accuracy = predict_results(train, train, clusters_count)
     print("Train set accuracy")
     print(f"{clusters_count} - Accuracy: {accuracy:.2f}")
     print()
@@ -31,6 +31,12 @@ def main():
     print()
     print(f"Average Accuracy: {mean(accuracies):.2f}%")
     print(f"Standard Deviation: {stdev(accuracies):.2f}%")
+
+    accuracy = predict_results(train, test, clusters_count)
+
+    print("\n\nTrain set accuracy")
+    print(f"{clusters_count} - Accuracy: {accuracy:.2f}")
+    print()
 
 
 if __name__ == "__main__":
