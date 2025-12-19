@@ -1,4 +1,5 @@
 from pandas import DataFrame, Series
+from typing import Dict
 from numpy import argmax
 from math import log
 
@@ -10,6 +11,17 @@ class NaiveBayes:
         self.ignore_missing = ignore_missing
         self.classes = self.train[self.target_name].unique()
         self.laplace_lambda = laplace_lambda
+        self.feature_counts: Dict[str, Dict[str, Dict[str, int]]] = {column: {cl: {} for cl in self.classes} for column in train.columns[1:]}
+
+        for row in train.values:
+            class_name = row[0]
+            for column_index, value in enumerate(row[1:]):
+                column_name = train.columns[column_index + 1]
+                if ignore_missing and value == '?':
+                    continue
+
+                current_count = self.feature_counts[column_name][class_name].setdefault(value, 0)
+                self.feature_counts[column_name][class_name][value] = current_count + 1
 
     def predict(self, new_instance: Series):
         classes_counts = self.train[self.target_name].value_counts()
@@ -26,13 +38,9 @@ class NaiveBayes:
                 if column_name == self.target_name:
                     continue
 
-                records_for_class = self.train[self.train[self.target_name] == current_class]
-                if self.ignore_missing:
-                    records_for_class = records_for_class[records_for_class[column_name] != '?']
-
-                class_and_column_count = records_for_class[column_name].value_counts().get(x, 0)
+                class_and_column_count = self.feature_counts[column_name][current_class].get(x, 0)
                 feature_p_given_class = class_and_column_count + self.laplace_lambda /\
-                                        (records_for_class.size + self.classes.size * self.laplace_lambda)
+                                        (classes_counts[current_class] + self.classes.size * self.laplace_lambda)
 
                 result += log(feature_p_given_class)
 

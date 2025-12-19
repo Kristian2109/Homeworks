@@ -8,7 +8,7 @@ LAPLACE = 2
 def main():
     ignore_missing = bool(input())
     data = load_dataset()
-    train, test = train_test_split(data, test_size=0.2, random_state=66547)
+    train, test = train_test_split(data, test_size=0.2, random_state=42)
     model = NaiveBayes(train, 'Class Name', ignore_missing, LAPLACE)
     train_accuracy = get_results_accuracy(model, train)
 
