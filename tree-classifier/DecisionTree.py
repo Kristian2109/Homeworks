@@ -1,13 +1,14 @@
 import pandas as pd
 import numpy as np
 import math
+from typing import Hashable
 
 
 class Node:
     def __init__(self) -> None:
-        self.column_name: str | None
-        self.children: dict[str, Node] = {}
-        self.class_name: str | None
+        self.column_name: Hashable | None = None
+        self.children: dict[Hashable, Node] = {}
+        self.class_name: str | None = None
 
 
 class DecisionTree:
@@ -18,16 +19,28 @@ class DecisionTree:
     def fit(self, x: pd.DataFrame, y: pd.DataFrame):
         self.tree = self._build_tree(x, y, 0, self.max_depth)
 
-    def _build_tree(self, x, y, current_depth, max_depth) -> Node:
+    def predict(self, value: pd.Series):
+        return self._travers_node(self.tree, value)
+
+    def _travers_node(self, node: Node, value: pd.Series):
+        if node.class_name:
+            return node.class_name
+
+        child = node.children.get(value[node.column_name])
+        if not child:
+            return None
+
+        return self._travers_node(child, value)
+
+    def _build_tree(self, x: pd.DataFrame, y: pd.DataFrame, current_depth, max_depth) -> Node:
         current_node = Node()
 
         if x.columns.size == 0 or current_depth >= max_depth or y.nunique()[y.columns[0]] == 1:
-            current_node.class_name = y.mode
+            current_node.class_name = y[y.columns[0]].mode().iloc[0]
             return current_node
 
-        column_entropies = list(map(lambda col: new_entropy(x, y, col), x.columns))
+        column_entropies = list(map(lambda col: partitioned_entropy(x, y, col), x.columns))
         best_column = x.columns[np.argmin(column_entropies)]
-        print(f"Entropies: {column_entropies} - {best_column}")
 
         current_node.column_name = best_column
         for value, indexes in x.groupby(best_column).groups.items():
@@ -39,15 +52,7 @@ class DecisionTree:
         return current_node
 
 
-def entropy(y: pd.DataFrame):
-    result = 0
-    for count in y.value_counts():
-        p = count / y.size
-        result -= (p * math.log(p))
-    return result
-
-
-def new_entropy(x: pd.DataFrame, y: pd.DataFrame, attribute_name: str):
+def partitioned_entropy(x: pd.DataFrame, y: pd.DataFrame, attribute_name: str):
     counts_by_class = x[attribute_name].value_counts()
     res = 0
     for c in counts_by_class.index:
@@ -55,3 +60,11 @@ def new_entropy(x: pd.DataFrame, y: pd.DataFrame, attribute_name: str):
         res += (entropy(partitioned_y) * counts_by_class[c] / y.size)
 
     return res
+
+
+def entropy(y: pd.DataFrame):
+    result = 0
+    for count in y.value_counts():
+        p = count / y.size
+        result -= (p * math.log(p))
+    return result
