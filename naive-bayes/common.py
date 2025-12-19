@@ -1,6 +1,6 @@
 import pandas as pd
 from statistics import mean, stdev
-from sklearn.model_selection import StratifiedKFold
+from sklearn.model_selection import StratifiedKFold, train_test_split
 from NaiveBayes import NaiveBayes
 
 
@@ -21,7 +21,7 @@ def get_results_accuracy(model, test):
     return mean(results)
 
 
-def cross_fold_validation(data: pd.DataFrame, ignore_missing: bool, folds: int):
+def cross_fold_validation(data: pd.DataFrame, ignore_missing: bool, folds: int, laplace=1):
     skf = StratifiedKFold(
         n_splits=folds,
         shuffle=True,
@@ -34,7 +34,7 @@ def cross_fold_validation(data: pd.DataFrame, ignore_missing: bool, folds: int):
         x_train = data.iloc[train_idx]
         x_test = data.iloc[test_idx]
 
-        model = NaiveBayes(x_train, 'Class Name', ignore_missing)
+        model = NaiveBayes(x_train, 'Class Name', ignore_missing, laplace)
 
         accuracy = get_results_accuracy(model, x_test)
         print(f"    Accuracy Fold {len(folds)}: {get_percentage(accuracy)}")
@@ -43,6 +43,17 @@ def cross_fold_validation(data: pd.DataFrame, ignore_missing: bool, folds: int):
     print()
     print(f"    Average Accuracy: {get_percentage(mean(folds))}")
     print(f"    Standard Deviation: {get_percentage(stdev(folds))}")
+
+
+def test_different_laplace(data: pd.DataFrame, ignore_missing: bool):
+    print(f"\nIgnore missing: {ignore_missing}")
+    for i in range(5):
+        accuracies = []
+        for j in range(5):
+            train, test = train_test_split(data, test_size=0.2, random_state=j * 42)
+            model = NaiveBayes(train, 'Class Name', ignore_missing, i + 1)
+            accuracies.append(get_results_accuracy(model, test))
+        print(f"Laplace  {i + 1}: {get_percentage(mean(accuracies))}")
 
 
 def get_percentage(num: float):

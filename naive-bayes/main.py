@@ -1,4 +1,4 @@
-from common import load_dataset, get_results_accuracy, cross_fold_validation, get_percentage
+from common import load_dataset, get_results_accuracy, cross_fold_validation, get_percentage, test_different_laplace
 from sklearn.model_selection import train_test_split
 from NaiveBayes import NaiveBayes
 
@@ -16,12 +16,15 @@ def main():
     print(f"    Accuracy: {get_percentage(train_accuracy)}")
 
     print("10-Fold Cross-Validation Results:")
-    cross_fold_validation(train, ignore_missing, 10)
+    cross_fold_validation(train, ignore_missing, 10, LAPLACE)
 
     test_accuracy = get_results_accuracy(model, test)
 
     print(f"2. Test Set Accuracy:")
     print(f"    Accuracy:{get_percentage(test_accuracy)}")
+
+    # test_different_laplace(data, True)
+    # test_different_laplace(data, False)
 
 
 if __name__ == '__main__':
