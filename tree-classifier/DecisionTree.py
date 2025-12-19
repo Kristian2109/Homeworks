@@ -52,11 +52,11 @@ class DecisionTree:
         return current_node
 
 
-def partitioned_entropy(x: pd.DataFrame, y: pd.DataFrame, attribute_name: str):
-    counts_by_class = x[attribute_name].value_counts()
+def partitioned_entropy(x: pd.DataFrame, y: pd.DataFrame, column_name: str):
+    counts_by_class = x[column_name].value_counts()
     res = 0
     for c in counts_by_class.index:
-        partitioned_y = y.loc[x[x[attribute_name] == c].index]
+        partitioned_y = y.loc[x[x[column_name] == c].index]
         res += (entropy(partitioned_y) * counts_by_class[c] / y.size)
 
     return res

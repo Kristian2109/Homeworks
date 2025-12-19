@@ -6,9 +6,7 @@ from statistics import mean
 
 def pr(tree, y_test, r):
     pred = tree.predict(r)
-    print(pred)
-    print(r.name)
-    print(y_test.loc[r.name])
+    print(f"Pred {pred}; Actual {y_test.loc[r.name]}")
     return pred == y_test.loc[r.name]
 
 
@@ -18,9 +16,9 @@ def main():
     # data (as pandas dataframes)
     x = breast_cancer.data.features
     y = breast_cancer.data.targets
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.05, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=105)
 
-    tree = DecisionTree(2)
+    tree = DecisionTree(3)
     tree.fit(x_train, y_train)
 
     print("res")
