@@ -10,11 +10,11 @@ import numpy as np
 
 def work(args):
     x_train, y_train, (depth, min_records) = args
-    cross_val_sampler = StratifiedKFold(n_splits=10, shuffle=True, random_state=142)
+    cross_val_sampler = StratifiedKFold(n_splits=5, shuffle=True, random_state=2)
     tree = DecisionTree(depth, min_records, 0.02)
     scorers = {
         'accuracy': make_scorer(accuracy_score),
-        'precision': make_scorer(precision_score, pos_label='recurrence-events', zero_division=0),
+        'precision': make_scorer(precision_score, pos_label='recurrence-events'),
         'recall': make_scorer(recall_score, pos_label='recurrence-events')
     }
     scores = cross_validate(tree, x_train, y_train, cv=cross_val_sampler, scoring=scorers)
@@ -40,7 +40,7 @@ def main():
     x: pd.DataFrame = breast_cancer.data.features
     y: pd.DataFrame = breast_cancer.data.targets
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
+    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=1)
 
     params = []
     for depth in range(3, 8):

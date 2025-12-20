@@ -54,6 +54,7 @@ class DecisionTree(sk.base.BaseEstimator):
         best_column = x.columns[np.argmin(column_entropies)]
 
         if entropy(y) - min(column_entropies) < self.min_entropy_gain:
+            current_node.class_name = majority_class
             return current_node
 
         current_node.column_name = best_column
