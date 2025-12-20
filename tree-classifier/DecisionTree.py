@@ -14,13 +14,14 @@ class Node:
 
 
 class DecisionTree(sk.base.BaseEstimator):
-    def __init__(self, max_depth=100, min_examples=0):
+    def __init__(self, max_depth=100, min_examples=0, min_entropy_gain=0.005):
         self.max_depth: int = max_depth
         self.min_examples: int = min_examples
+        self.min_entropy_gain: float = min_entropy_gain
         self.tree: None | Node = None
 
     def fit(self, x: pd.DataFrame, y: pd.DataFrame):
-        self.tree = self._build_tree(x, y, 0, self.max_depth)
+        self.tree = self._build_tree(x, y, 0)
 
     def predict(self, x: pd.DataFrame) -> np.ndarray:
         return x.apply(self.predict_single, axis=1).to_numpy()
@@ -38,12 +39,12 @@ class DecisionTree(sk.base.BaseEstimator):
 
         return self._travers_node(child, value)
 
-    def _build_tree(self, x: pd.DataFrame, y: pd.DataFrame, current_depth, max_depth) -> Node:
+    def _build_tree(self, x: pd.DataFrame, y: pd.DataFrame, current_depth) -> Node:
         majority_class = y[y.columns[0]].mode().iloc[0]
         current_node = Node(majority_class)
 
         if x.columns.size == 0 or \
-                current_depth >= max_depth or \
+                current_depth >= self.max_depth or \
                 y.nunique()[y.columns[0]] == 1 or \
                 y.size < self.min_examples:
             current_node.class_name = majority_class
@@ -52,11 +53,14 @@ class DecisionTree(sk.base.BaseEstimator):
         column_entropies = list(map(lambda col: partitioned_entropy(x, y, col), x.columns))
         best_column = x.columns[np.argmin(column_entropies)]
 
+        if entropy(y) - min(column_entropies) < self.min_entropy_gain:
+            return current_node
+
         current_node.column_name = best_column
         for value, indexes in x.groupby(best_column).groups.items():
             x_partition = x.loc[indexes].drop(columns=[best_column], axis=1)
             y_partition = y.loc[indexes]
-            child_node = self._build_tree(x_partition, y_partition, current_depth + 1, max_depth)
+            child_node = self._build_tree(x_partition, y_partition, current_depth + 1)
             current_node.children.setdefault(value, child_node)
 
         return current_node
