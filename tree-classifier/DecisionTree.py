@@ -1,25 +1,31 @@
 import pandas as pd
 import numpy as np
 import math
+import sklearn as sk
 from typing import Hashable
 
 
 class Node:
-    def __init__(self) -> None:
+    def __init__(self, majority_class) -> None:
         self.column_name: Hashable | None = None
         self.children: dict[Hashable, Node] = {}
         self.class_name: str | None = None
+        self.majority_class: str = majority_class
 
 
-class DecisionTree:
-    def __init__(self, max_depth):
+class DecisionTree(sk.base.BaseEstimator):
+    def __init__(self, max_depth=100, min_examples=0):
         self.max_depth: int = max_depth
+        self.min_examples: int = min_examples
         self.tree: None | Node = None
 
     def fit(self, x: pd.DataFrame, y: pd.DataFrame):
         self.tree = self._build_tree(x, y, 0, self.max_depth)
 
-    def predict(self, value: pd.Series):
+    def predict(self, x: pd.DataFrame) -> np.ndarray:
+        return x.apply(self.predict_single, axis=1).to_numpy()
+
+    def predict_single(self, value: pd.Series) -> str | None:
         return self._travers_node(self.tree, value)
 
     def _travers_node(self, node: Node, value: pd.Series):
@@ -28,15 +34,19 @@ class DecisionTree:
 
         child = node.children.get(value[node.column_name])
         if not child:
-            return None
+            return node.majority_class
 
         return self._travers_node(child, value)
 
     def _build_tree(self, x: pd.DataFrame, y: pd.DataFrame, current_depth, max_depth) -> Node:
-        current_node = Node()
+        majority_class = y[y.columns[0]].mode().iloc[0]
+        current_node = Node(majority_class)
 
-        if x.columns.size == 0 or current_depth >= max_depth or y.nunique()[y.columns[0]] == 1:
-            current_node.class_name = y[y.columns[0]].mode().iloc[0]
+        if x.columns.size == 0 or \
+                current_depth >= max_depth or \
+                y.nunique()[y.columns[0]] == 1 or \
+                y.size < self.min_examples:
+            current_node.class_name = majority_class
             return current_node
 
         column_entropies = list(map(lambda col: partitioned_entropy(x, y, col), x.columns))
