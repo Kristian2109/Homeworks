@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split, StratifiedKFold
 from DecisionTree import DecisionTree
 
 BASE_MAX_DEPTH = 4
-BASE_MIN_EXAMPLES = 10
+BASE_MIN_EXAMPLES = 14
 BASE_MIN_GAIN = 0.02
 
 
