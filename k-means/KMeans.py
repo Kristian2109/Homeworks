@@ -3,39 +3,39 @@ import numpy.random as r
 
 K_MEANS_PLUS_PLUS = 'k-means++'
 K_MEANS = 'k-means'
+WCSS = 'wcss'
+SILHOUETTE = 'silhouette'
 
 
 class KMeans:
     def __init__(self,
                  n_clusters: int,
                  algorithm=K_MEANS_PLUS_PLUS,
-                 metric='euclidean',
-                 evaluation_function='',
+                 metric='wcss',
                  max_iter=5,
                  random_restart_iter=3):
         self.metric = metric
-        self.evaluation_function = evaluation_function
         self.n_clusters = n_clusters
         self.centroids = []
         self.max_iter = max_iter
         self.random_restart_iter = random_restart_iter
         self.algorithm = algorithm
+        self.evaluation_function = self._compute_silhouette_score if metric == SILHOUETTE else self._compute_wcss
 
     def fit(self, x: np.ndarray):
         best_centers = None
-        best_wcss = 0
+        best_score = 0
         best_labels = []
-        for i in range(self.random_restart_iter):
+        for _ in range(self.random_restart_iter):
             self.centroids = self._get_initial_centroids(x)
-            labels = []
-            for i in range(self.max_iter):
+            for __ in range(self.max_iter):
                 labels = self._get_new_labels(x)
                 self.centroids = self._get_new_means(x, labels)
 
-            current_wcss = self._compute_wcss(x, labels)
-            if best_wcss > current_wcss or best_centers is None:
+            current_score = self.evaluation_function(x, labels)
+            if self.is_better(current_score, best_score) or best_centers is None:
                 best_centers = self.centroids
-                best_wcss = current_wcss
+                best_score = current_score
                 best_labels = labels
 
         self.centroids = best_centers
@@ -67,6 +67,34 @@ class KMeans:
 
         return centroids
 
-    def _compute_wcss(self, x: np.ndarray, labels: np.ndarray):
+    def _compute_wcss(self, x: np.ndarray, labels: np.ndarray) -> np.float32:
         distances = np.sum((x - self.centroids[labels]) ** 2, axis=1)
         return np.sum(distances)
+
+    def _compute_silhouette_score(self, x: np.ndarray, labels: np.ndarray) -> np.float32:
+        distances_matrix = np.sum((x[:, None, :] - x[None, :, :])**2, axis=2)
+
+        a = np.zeros(len(x))
+        for i in range(len(x)):
+            same_cluster = labels == labels[i]
+            same_cluster[i] = False
+            a[i] = np.mean(distances_matrix[i, same_cluster])
+
+        b = np.full(len(x), np.inf)
+        for i in range(len(x)):
+            unique_clusters = range(self.n_clusters)
+            for cluster in unique_clusters:
+                if cluster == labels[i]:
+                    continue
+                current_mean = np.mean(distances_matrix[i, labels == cluster])
+                b[i] = np.minimum(b[i], current_mean)
+
+        return np.mean((b - a) / np.maximum(a, b))
+
+    def is_better(self, f, s):
+        if self.metric == SILHOUETTE:
+            return f > s
+        if self.metric == WCSS:
+            return f < s
+
+        return f < s
