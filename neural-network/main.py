@@ -5,7 +5,7 @@ from NeuralNetwork import Layer, SIGMOID, TANH
 DATA_PER_FUNCTION = {
     'AND': {
         'x': np.array([[0, 0], [0, 1], [1, 0], [1, 1], [1, 1]]),
-        'y': np.array([0, 1, 0, 0, 1])
+        'y': np.array([0, 0, 0, 1, 1])
     },
     'OR': {
         'x': np.array([[0, 0], [0, 1], [1, 0], [1, 1], [0, 0]]),
@@ -31,28 +31,28 @@ class SimpleNeuralNetwork:
         return x
 
     def parameters(self):
-        return [p for layer in self.layers
-                    for p in layer.parameters()]
+        return [p for layer in self.layers for p in layer.parameters()]
 
-    def train(self, x, y, learning_rate=0.5, epochs=20):
-        for k in range(epochs):
-            y_pred = [self.predict(v) for v in x]
-            loss = sum((y_out - y_true) ** 2 for y_true, y_out in zip(y, y_pred)) / len(x)
 
-            for p in self.parameters():
-                p.grad = 0.0
-            loss.backward()
+def train(model, x, y, learning_rate=1, epochs=20):
+    for k in range(epochs):
+        y_pred = [model.predict(v) for v in x]
+        loss = sum((y_out - y_true) ** 2 for y_true, y_out in zip(y, y_pred)) / len(x)
 
-            for p in self.parameters():
-                p.data -= learning_rate * p.grad
+        for p in model.parameters():
+            p.grad = 0.0
+        loss.backward()
+
+        for p in model.parameters():
+            p.data -= learning_rate * p.grad
 
 
 def train_for_function(layers_sizes, act_function, data):
     model = SimpleNeuralNetwork(layers_sizes, act_function)
-    model.train(data['x'], data['y'], epochs=1000)
+    train(model, data['x'], data['y'], epochs=2000)
 
-    for t in data['x']:
-        print(f"{(t[0], t[1])} -> {model.predict(t):.4f}")
+    for t in data['x'][:4]:
+        print(f"{(int(t[0]), int(t[1]))} -> {model.predict(t).data:.4f}")
 
 
 def main():
@@ -66,8 +66,9 @@ def main():
     layers_sizes = [2] + hidden_layers + [1]
 
     if func_name == 'ALL':
-        for data in DATA_PER_FUNCTION.values():
-            train_for_function(layers_sizes, act_function, data)
+        for k in DATA_PER_FUNCTION.keys():
+            print(k)
+            train_for_function(layers_sizes, act_function, DATA_PER_FUNCTION[k])
     else:
         data = DATA_PER_FUNCTION.get(func_name, 'AND')
         train_for_function(layers_sizes, act_function, data)
