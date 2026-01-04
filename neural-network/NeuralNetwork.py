@@ -6,11 +6,11 @@ TANH = 'tanh'
 
 
 class Value:
-    def __init__(self, data, _children=(), _op="", label=""):
+    def __init__(self, data, prev=(), _op="", label=""):
         self.data = data
         self.grad = 0.0
         self._backward = lambda: None
-        self._prev = set(_children)
+        self.prev = set(prev)
         self._op = _op
         self.label = label
 
@@ -125,7 +125,7 @@ class Value:
         def build_topo(v):
             if v not in visited:
                 visited.add(v)
-                for child in v._prev:
+                for child in v.prev:
                     build_topo(child)
                 topo.append(v)
 
