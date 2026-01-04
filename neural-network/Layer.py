@@ -71,9 +71,6 @@ class Value:
         return out
 
     def __pow__(self, other):
-        assert isinstance(
-            other, (int, float)
-        ), "only supporting int/float powers for now"
         out = Value(self.data ** other, (self,), f"**{other}")
 
         def _backward():
@@ -83,22 +80,22 @@ class Value:
 
         return out
 
-    def __rmul__(self, other):  # other * self
+    def __rmul__(self, other):
         return self * other
 
-    def __truediv__(self, other):  # self / other
+    def __truediv__(self, other):
         return self * other ** -1
 
-    def __neg__(self):  # -self
+    def __neg__(self):
         return self * -1
 
-    def __sub__(self, other):  # self - other
+    def __sub__(self, other):
         return self + (-other)
 
-    def __rsub__(self, other):  # other - self
+    def __rsub__(self, other):
         return -self + other
 
-    def __radd__(self, other):  # other + self
+    def __radd__(self, other):
         return self + other
 
     def exp(self):

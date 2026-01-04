@@ -11,7 +11,7 @@ class SimpleNeuralNetwork:
     def train(self, x, y, learning_rate=1, epochs=20):
         for k in range(epochs):
             y_pred = [self.predict(v) for v in x]
-            loss = sum((y_out - y_true) ** 2 for y_true, y_out in zip(y, y_pred)) / len(x)
+            loss = mean_squared_loss(y, y_pred)
 
             for p in self.parameters():
                 p.grad = 0.0
@@ -27,3 +27,7 @@ class SimpleNeuralNetwork:
 
     def parameters(self):
         return [p for layer in self.layers for p in layer.parameters()]
+
+
+def mean_squared_loss(y_true, y_pred):
+    return sum((t - p) ** 2 for t, p in zip(y_true, y_pred)) / len(y_true)
