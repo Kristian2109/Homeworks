@@ -5,11 +5,40 @@ SIGMOID = 'sigmoid'
 TANH = 'tanh'
 
 
+class Layer:
+    def __init__(self, input_size: int, output_size: int, activation=''):
+        self.neurons = [Neuron(input_size, activation) for _ in range(output_size)]
+
+    def __call__(self, x):
+        outs = [n(x) for n in self.neurons]
+        return outs[0] if len(outs) == 1 else outs
+
+    def parameters(self):
+        return [p for neuron in self.neurons for p in neuron.parameters()]
+
+
+class Neuron:
+    def __init__(self, input_size, activation=SIGMOID):
+        self.w = [Value(random.uniform(-1, 1)) for _ in range(input_size)]
+        self.b = Value(random.uniform(-1, 1))
+        self.activation = activation
+
+    def __call__(self, x):
+        act = sum((wi * xi for wi, xi in zip(self.w, x)), self.b)
+        if self.activation == TANH:
+            return act.tanh()
+
+        return act.sigmoid()
+
+    def parameters(self):
+        return self.w + [self.b]
+
+
 class Value:
     def __init__(self, data, prev=(), _op="", label=""):
         self.data = data
         self.grad = 0.0
-        self._backward = lambda: None
+        self.compute_backward = lambda: None
         self.prev = set(prev)
         self._op = _op
         self.label = label
@@ -25,7 +54,7 @@ class Value:
             self.grad += 1.0 * out.grad
             other.grad += 1.0 * out.grad
 
-        out._backward = _backward
+        out.compute_backward = _backward
 
         return out
 
@@ -37,7 +66,7 @@ class Value:
             self.grad += other.data * out.grad
             other.grad += self.data * out.grad
 
-        out._backward = _backward
+        out.compute_backward = _backward
 
         return out
 
@@ -50,7 +79,7 @@ class Value:
         def _backward():
             self.grad += other * (self.data ** (other - 1)) * out.grad
 
-        out._backward = _backward
+        out.compute_backward = _backward
 
         return out
 
@@ -79,7 +108,7 @@ class Value:
         def _backward():
             self.grad += out.data * out.grad
 
-        out._backward = _backward
+        out.compute_backward = _backward
 
         return out
 
@@ -90,7 +119,7 @@ class Value:
         def _backward():
             self.grad += 1/(x*np.log(base)) * out.grad
 
-        out._backward = _backward
+        out.compute_backward = _backward
 
         return out
 
@@ -102,7 +131,7 @@ class Value:
         def _backward():
             self.grad += (t * (1-t)) * out.grad
 
-        out._backward = _backward
+        out.compute_backward = _backward
 
         return out
 
@@ -114,7 +143,7 @@ class Value:
         def _backward():
             self.grad += (1 - t ** 2) * out.grad
 
-        out._backward = _backward
+        out.compute_backward = _backward
 
         return out
 
@@ -133,35 +162,7 @@ class Value:
 
         self.grad = 1.0
         for node in reversed(topo):
-            node._backward()
+            node.compute_backward()
 
-
-class Neuron:
-    def __init__(self, input_size, activation=SIGMOID):
-        self.w = [Value(random.uniform(-1, 1)) for _ in range(input_size)]
-        self.b = Value(random.uniform(-1, 1))
-        self.activation = activation
-
-    def __call__(self, x):
-        act = sum((wi * xi for wi, xi in zip(self.w, x)), self.b)
-        if self.activation == TANH:
-            return act.tanh()
-
-        return act.sigmoid()
-
-    def parameters(self):
-        return self.w + [self.b]
-
-
-class Layer:
-    def __init__(self, input_size, output_size):
-        self.neurons = [Neuron(input_size) for _ in range(output_size)]
-
-    def __call__(self, x):
-        outs = [n(x) for n in self.neurons]
-        return outs[0] if len(outs) == 1 else outs
-
-    def parameters(self):
-        return [p for neuron in self.neurons for p in neuron.parameters()]
 
 
